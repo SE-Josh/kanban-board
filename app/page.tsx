@@ -1,19 +1,99 @@
+"use client";
+
+import React, { useState } from "react";
+import BasicDragDrop from "@/components/BasicDragDrop";
+import SortableList from "@/components/SortableList";
+import Kanban from "@/components/Kanban";
+
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"basic" | "sortable" | "multiple">(
+    "basic"
+  );
+
   return (
-    <main className="flex flex-col items-center justify-between p-12">
-      <div className="flex gap-4 p-4">
-        <div className="bg-base-200 p-2 rounded-lg w-50 h-100">
-          <h2 className="text-lg font-bold mb-2">代辦事項（腦力激盪）</h2>
-          <div className="flex flex-col gap-3">
-            <div className="card bg-white shadow">
-              <div className="card-body">
-                <h3 className="card-title">Task A</h3>
-                <p>細節描述</p>
-              </div>
-            </div>
-          </div>
+    <div className="mx-auto max-w-4xl p-4">
+      <div className="mb-8">
+        <h1 className="mb-2 text-3xl font-bold">@dnd-kit Examples</h1>
+        <p className="text-secondary">
+          Explore different drag and drop patterns with @dnd-kit and React
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex border-b dark:border-gray-700">
+          <button
+            className={`px-4 py-2 ${
+              activeTab === "basic"
+                ? "border-b-2 border-blue-500 font-medium text-blue-600 dark:text-blue-400"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+            onClick={() => setActiveTab("basic")}
+          >
+            Basic Drag & Drop
+          </button>
+          <button
+            className={`px-4 py-2 ${
+              activeTab === "sortable"
+                ? "border-b-2 border-blue-500 font-medium text-blue-600 dark:text-blue-400"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+            onClick={() => setActiveTab("sortable")}
+          >
+            Sortable List
+          </button>
+          <button
+            className={`px-4 py-2 ${
+              activeTab === "multiple"
+                ? "border-b-2 border-blue-500 font-medium text-blue-600 dark:text-blue-400"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+            onClick={() => setActiveTab("multiple")}
+          >
+            Multiple Containers
+          </button>
         </div>
       </div>
-    </main>
+
+      <div className="rounded-lg border bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        {activeTab === "basic" && (
+          <div>
+            <h2 className="mb-4 text-xl font-bold dark:text-white">
+              Basic Drag & Drop
+            </h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-300">
+              A simple example of dragging an item to a drop area. This
+              demonstrates the core functionality of @dnd-kit.
+            </p>
+            <BasicDragDrop />
+          </div>
+        )}
+
+        {activeTab === "sortable" && (
+          <div>
+            <h2 className="mb-4 text-xl font-bold dark:text-white">
+              Sortable List
+            </h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-300">
+              A list where items can be reordered by dragging. Uses the
+              @dnd-kit/sortable extension to enable intuitive sorting.
+            </p>
+            <SortableList />
+          </div>
+        )}
+
+        {activeTab === "multiple" && (
+          <div>
+            <h2 className="mb-4 text-xl font-bold dark:text-white">
+              Multiple Containers
+            </h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-300">
+              A Kanban-style board where items can be dragged between containers
+              and sorted within each container.
+            </p>
+            <Kanban />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
