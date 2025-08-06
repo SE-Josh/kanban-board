@@ -70,12 +70,21 @@ const DroppableContainer = ({
   id,
   title,
   tasks,
+  onAddTask,
 }: {
   id: string;
   title: string;
   tasks: Task[];
+  onAddTask: (statusId: string, content: string) => void;
 }) => {
   const { setNodeRef } = useDroppable({ id });
+  const [newTask, setNewTask] = useState("");
+
+  const handleAdd = () => {
+    if (!newTask.trim()) return;
+    onAddTask(id, newTask.trim());
+    setNewTask("");
+  };
 
   return (
     <div
@@ -100,6 +109,18 @@ const DroppableContainer = ({
             <p className="text-sm">目前沒有任務</p>
           </div>
         )}
+      </div>
+
+      {/* 新增任務輸入框 */}
+      <div className="mt-3 flex gap-2">
+        <input
+          type="text"
+          placeholder="新增任務..."
+          className="input input-ghost input-xs"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+        />
       </div>
     </div>
   );
@@ -195,6 +216,17 @@ export default function KanbanBoard() {
 
   const getActiveTask = () => tasks.find((t) => t.id === activeId) || null;
 
+  const handleAddTask = (statusId: string, content: string) => {
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      statusId,
+      content,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setTasks((prev) => [...prev, newTask]);
+  };
+
   const getTasksByStatus = (statusId: string) =>
     tasks.filter((t) => t.statusId === statusId);
 
@@ -218,6 +250,7 @@ export default function KanbanBoard() {
                 id={status.id}
                 title={status.title}
                 tasks={getTasksByStatus(status.id)}
+                onAddTask={handleAddTask} // 傳入新增功能
               />
             );
           })}
