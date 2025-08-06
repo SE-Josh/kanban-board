@@ -2,7 +2,7 @@ import { defaultStatuses, Task } from "@/lib/types";
 
 const TaskList = ({ tasks }: { tasks: Task[] }) => {
   return (
-    <div className="overflow-x-auto mt-5 rounded border border-base-content bg-base-100">
+    <div className="overflow-x-auto mt-5 rounded bg-base-100">
       <table className="table">
         {/* head */}
         <thead>

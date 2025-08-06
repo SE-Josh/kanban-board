@@ -4,7 +4,6 @@ import {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
-  DragCancelEvent,
   KeyboardSensor,
   PointerSensor,
   UniqueIdentifier,
@@ -54,7 +53,7 @@ const SortableItem = ({
       {...listeners}
       className={`cursor-grab touch-none rounded-md border p-3 active:cursor-grabbing ${
         isDragging
-          ? `border-2 border-dashed border-base-300 bg-neutral text-neutral-content opacity-30`
+          ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30`
           : `bg-base-200 border-base-300 hover:bg-base-100`
       }`}
     >
