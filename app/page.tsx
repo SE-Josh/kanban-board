@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-lg border p-6 bg-base-200">
         {activeTab === "newKanban" && <NewKanban />}
 
         {activeTab === "basic" && (
