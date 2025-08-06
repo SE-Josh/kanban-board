@@ -338,6 +338,16 @@ export default function KanbanBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
+        {/* 8/6 做到這邊，修成正果 > 封存 */}
+        {/* 給定五個標籤 */}
+        {/* 標籤可以改名稱 */}
+        {/* List 的地方可以加上TAG */}
+        {/* 右上角功能列：打開蛋雕區 */}
+        {/* localStorage 連動 */}
+        {/* 匯出、匯入 */}
+        {/* 產生日報 */}
+        {/* 搜尋功能 */}
+
         <div className="grid gap-4 md:grid-cols-3">
           {statuses.map((status) => {
             if (status.id === "archived") return null; // 忽略封存狀態
