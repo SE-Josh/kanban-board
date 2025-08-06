@@ -4,6 +4,7 @@ import {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  DragCancelEvent,
   KeyboardSensor,
   PointerSensor,
   UniqueIdentifier,
@@ -11,11 +12,13 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  DragOverlay,
 } from "@dnd-kit/core";
 
 import {
   SortableContext,
   useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
@@ -116,6 +119,17 @@ const DroppableContainer = ({
   );
 };
 
+const ItemOverlay = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="cursor-grabbing rounded-md bg-base-100 p-3 shadow-md">
+      <div className="flex items-center gap-3">
+        <span className="text-gray-500">⋮</span>
+        <span className="text-gray-200">{children}</span>
+      </div>
+    </div>
+  );
+};
+
 export default function MultipleContainers() {
   const [containers, setContainers] = useState<Container[]>([
     {
@@ -146,10 +160,13 @@ export default function MultipleContainers() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        delay: 100,
+        tolerance: 5,
       },
     }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
   const findContainerId = (
@@ -166,6 +183,11 @@ export default function MultipleContainers() {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id);
+  };
+
+  const handleDragCancel = (event: DragCancelEvent) => {
+    void event;
+    setActiveId(null);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -280,8 +302,15 @@ export default function MultipleContainers() {
         });
       }
     }
-    // 0805 做到這邊，overlay 還沒加上去
     setActiveId(null);
+  };
+
+  const getActiveItem = () => {
+    for (const container of containers) {
+      const item = container.items.find((item) => item.id === activeId);
+      if (item) return item;
+    }
+    return null;
   };
 
   return (
@@ -291,6 +320,7 @@ export default function MultipleContainers() {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
+        onDragCancel={handleDragCancel}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
@@ -304,6 +334,19 @@ export default function MultipleContainers() {
             />
           ))}
         </div>
+        <DragOverlay
+          dropAnimation={{
+            duration: 150,
+            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+          }}
+        >
+          {activeId ? (
+            <ItemOverlay>
+              <></>
+              {getActiveItem()?.content}
+            </ItemOverlay>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
