@@ -11,6 +11,7 @@ const TaskList = ({ tasks }: { tasks: Task[] }) => {
             <th>內容</th>
             <th>描述</th>
             <th>狀態</th>
+            <th>建立時間</th>
           </tr>
         </thead>
         <tbody>
@@ -25,6 +26,7 @@ const TaskList = ({ tasks }: { tasks: Task[] }) => {
                     ?.title
                 }
               </td>
+              <td>{task.createdAt}</td>
             </tr>
           ))}
         </tbody>
