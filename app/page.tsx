@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import BasicDragDrop from "@/components/BasicDragDrop";
 import SortableList from "@/components/SortableList";
 import Kanban from "@/components/Kanban";
+import NewKanban from "@/components/NewKanban";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"basic" | "sortable" | "multiple">(
-    "basic"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "newKanban" | "basic" | "sortable" | "multiple"
+  >("newKanban");
 
   return (
     <div className="mx-auto max-w-4xl p-4">
@@ -21,6 +22,16 @@ export default function Home() {
 
       <div className="mb-6">
         <div className="flex border-b dark:border-gray-700">
+          <button
+            className={`px-4 py-2 ${
+              activeTab === "newKanban"
+                ? "border-b-2 border-blue-500 font-medium text-blue-600 dark:text-blue-400"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+            onClick={() => setActiveTab("newKanban")}
+          >
+            康邦 博德
+          </button>
           <button
             className={`px-4 py-2 ${
               activeTab === "basic"
@@ -55,6 +66,8 @@ export default function Home() {
       </div>
 
       <div className="rounded-lg border bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        {activeTab === "newKanban" && <NewKanban />}
+
         {activeTab === "basic" && (
           <div>
             <h2 className="mb-4 text-xl font-bold dark:text-white">
