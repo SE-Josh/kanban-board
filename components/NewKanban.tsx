@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import {
   DndContext,
@@ -23,6 +25,9 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
+import { FaCheck } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
+import { MdCancel } from "react-icons/md";
 
 import { Task, Status, defaultTasks, defaultStatuses } from "@/lib/types";
 import TaskList from "@/components/TaskList";
@@ -31,9 +36,13 @@ import TaskList from "@/components/TaskList";
 const SortableItem = ({
   id,
   content,
+  onDelete,
+  onEdit,
 }: {
   id: UniqueIdentifier;
   content: string;
+  onDelete: (taskId: string) => void;
+  onEdit: (taskId: string, newContent: string) => void;
 }) => {
   const {
     attributes,
@@ -43,23 +52,87 @@ const SortableItem = ({
     transition,
     isDragging,
   } = useSortable({ id });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(content);
+
   const style = { transform: CSS.Transform.toString(transform), transition };
+
+  const handleSave = () => {
+    if (editValue.trim()) {
+      onEdit(id as string, editValue.trim());
+      setIsEditing(false);
+    }
+  };
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`cursor-grab touch-none rounded-md border p-3 active:cursor-grabbing ${
+      className={`rounded-md border ${
         isDragging
           ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30`
           : `bg-base-200 border-base-300 hover:bg-base-100`
       }`}
     >
-      <div className="flex items-center gap-3 text-base-content">
-        <span>⋮</span>
-        <span>{content}</span>
+      <div className="flex items-center justify-between text-base-content">
+        {isEditing ? (
+          <input
+            className="input input-sm w-full flex-1 p-3 pe-0 my-2 ms-1 border-0 focus:outline-none"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+            autoFocus
+          />
+        ) : (
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none"
+          >
+            <span>⋮</span>
+            <span>{content}</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-[0.5px] me-1">
+          {isEditing ? (
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              title="儲存"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSave();
+              }}
+            >
+              <FaCheck className="text-success text-lg" />
+            </button>
+          ) : (
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+              title="編輯"
+            >
+              <FaEdit className="text-warning text-lg" />
+            </button>
+          )}
+          <button
+            className="btn btn-sm btn-circle btn-ghost"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(id as string);
+            }}
+            title="刪除"
+          >
+            <MdCancel className="text-error text-lg" />
+          </button>
+        </div>
       </div>
     </li>
   );
@@ -71,11 +144,15 @@ const DroppableContainer = ({
   title,
   tasks,
   onAddTask,
+  onDeleteTask,
+  onEditTask,
 }: {
   id: string;
   title: string;
   tasks: Task[];
   onAddTask: (statusId: string, content: string) => void;
+  onDeleteTask: (taskId: string) => void;
+  onEditTask: (taskId: string, newContent: string) => void;
 }) => {
   const { setNodeRef } = useDroppable({ id });
   const [newTask, setNewTask] = useState("");
@@ -99,7 +176,13 @@ const DroppableContainer = ({
         >
           <ul className="flex flex-col gap-2">
             {tasks.map((task) => (
-              <SortableItem key={task.id} id={task.id} content={task.content} />
+              <SortableItem
+                key={task.id}
+                id={task.id}
+                content={task.content}
+                onDelete={onDeleteTask}
+                onEdit={onEditTask}
+              />
             ))}
           </ul>
         </SortableContext>
@@ -116,7 +199,7 @@ const DroppableContainer = ({
         <input
           type="text"
           placeholder="新增任務..."
-          className="input input-ghost input-xs"
+          className="input input-ghost input-xs border-0 focus:outline-none"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -130,7 +213,7 @@ const DroppableContainer = ({
 const ItemOverlay = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="cursor-grabbing rounded-md bg-base-100 text-base-content p-3 shadow-md">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <span>⋮</span>
         <span>{children}</span>
       </div>
@@ -227,6 +310,20 @@ export default function KanbanBoard() {
     setTasks((prev) => [...prev, newTask]);
   };
 
+  const handleDeleteTask = (taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  const handleEditTask = (taskId: string, newContent: string) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, content: newContent, updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
+  };
+
   const getTasksByStatus = (statusId: string) =>
     tasks.filter((t) => t.statusId === statusId);
 
@@ -251,6 +348,8 @@ export default function KanbanBoard() {
                 title={status.title}
                 tasks={getTasksByStatus(status.id)}
                 onAddTask={handleAddTask} // 傳入新增功能
+                onDeleteTask={handleDeleteTask} // 傳入刪除功能
+                onEditTask={handleEditTask} // 傳入編輯功能
               />
             );
           })}
