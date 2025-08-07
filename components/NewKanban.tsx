@@ -22,12 +22,27 @@ import { CSS } from "@dnd-kit/utilities";
 import { FaCheck } from "react-icons/fa";
 import { FaEdit } from "react-icons/fa";
 import { MdCancel } from "react-icons/md";
+import { FaBoxArchive } from "react-icons/fa6";
 
 import { Task, Status, defaultTasks, defaultStatuses } from "@/lib/types";
 import TaskList from "@/components/TaskList";
 
 // ===== Sortable 單一任務卡片 =====
-const SortableItem = ({ id, content, onDelete, onEdit }: { id: UniqueIdentifier; content: string; onDelete: (taskId: string) => void; onEdit: (taskId: string, newContent: string) => void }) => {
+const SortableItem = ({
+  id,
+  content,
+  statusId,
+  onDelete,
+  onEdit,
+  onArchive,
+}: {
+  id: UniqueIdentifier;
+  content: string;
+  statusId: string;
+  onDelete: (taskId: string) => void;
+  onEdit: (taskId: string, newContent: string) => void;
+  onArchive: (taskId: string) => void;
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +64,7 @@ const SortableItem = ({ id, content, onDelete, onEdit }: { id: UniqueIdentifier;
       className={`rounded-md border ${isDragging ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30` : `bg-base-200 border-base-300 hover:bg-base-100`}`}
     >
       <div className="flex items-center justify-between text-base-content">
+        {/* 文字區 */}
         {isEditing ? (
           <input
             className="input input-sm w-full flex-1 p-3 pe-0 my-2 ms-1 border-0 focus:outline-none"
@@ -58,12 +74,13 @@ const SortableItem = ({ id, content, onDelete, onEdit }: { id: UniqueIdentifier;
             autoFocus
           />
         ) : (
-          <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none">
+          <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none text-xs">
             <span>⋮</span>
             <span>{content}</span>
           </div>
         )}
 
+        {/* 按鈕區 */}
         <div className="flex items-center gap-[0.5px] me-1">
           {isEditing ? (
             <button
@@ -90,17 +107,31 @@ const SortableItem = ({ id, content, onDelete, onEdit }: { id: UniqueIdentifier;
               <FaEdit className="text-warning text-lg" />
             </button>
           )}
-          <button
-            className="btn btn-sm btn-circle btn-ghost"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(id as string);
-            }}
-            title="刪除"
-          >
-            <MdCancel className="text-error text-lg" />
-          </button>
+          {statusId === "done" ? (
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(id as string);
+              }}
+              title="封存"
+            >
+              <FaBoxArchive className="text-info text-lg scale-95" />
+            </button>
+          ) : (
+            <button
+              className="btn btn-sm btn-circle btn-ghost"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id as string);
+              }}
+              title="刪除"
+            >
+              <MdCancel className="text-error text-lg" />
+            </button>
+          )}
         </div>
       </div>
     </li>
@@ -115,6 +146,7 @@ const DroppableContainer = ({
   onAddTask,
   onDeleteTask,
   onEditTask,
+  onArchiveTask,
 }: {
   id: string;
   title: string;
@@ -122,6 +154,7 @@ const DroppableContainer = ({
   onAddTask: (statusId: string, content: string) => void;
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newContent: string) => void;
+  onArchiveTask: (taskId: string) => void;
 }) => {
   const { setNodeRef } = useDroppable({ id });
   const [newTask, setNewTask] = useState("");
@@ -139,7 +172,7 @@ const DroppableContainer = ({
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-2">
             {tasks.map((task) => (
-              <SortableItem key={task.id} id={task.id} content={task.content} onDelete={onDeleteTask} onEdit={onEditTask} />
+              <SortableItem key={task.id} id={task.id} content={task.content} statusId={task.statusId} onDelete={onDeleteTask} onEdit={onEditTask} onArchive={onArchiveTask} />
             ))}
           </ul>
         </SortableContext>
@@ -169,7 +202,7 @@ const DroppableContainer = ({
 // ===== 拖拉時的 Overlay =====
 const ItemOverlay = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="cursor-grabbing rounded-md bg-base-100 text-base-content p-3 shadow-md">
+    <div className="cursor-grabbing rounded-md bg-base-100 text-base-content text-xs p-3 shadow-md">
       <div className="flex items-center gap-2">
         <span>⋮</span>
         <span>{children}</span>
@@ -271,6 +304,10 @@ export default function KanbanBoard() {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, content: newContent, updatedAt: new Date().toISOString() } : t)));
   };
 
+  const handleArchiveTask = (taskId: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, statusId: "archived", updatedAt: new Date().toISOString() } : t)));
+  };
+
   const getTasksByStatus = (statusId: string) => tasks.filter((t) => t.statusId === statusId);
 
   return (
@@ -291,6 +328,7 @@ export default function KanbanBoard() {
                 onAddTask={handleAddTask} // 傳入新增功能
                 onDeleteTask={handleDeleteTask} // 傳入刪除功能
                 onEditTask={handleEditTask} // 傳入編輯功能
+                onArchiveTask={handleArchiveTask} // 傳入封存功能
               />
             );
           })}
