@@ -7,6 +7,7 @@ export type Status = {
 export type Task = {
   id: string;
   statusId: Status["id"]; // 關聯到 Status
+  labelId?: string; // 關連到 Label（可選）
   content: string; // 卡片標題
   description?: string; // 詳細描述（可選）
   createdAt: string; // ISO 時間字串
@@ -58,12 +59,13 @@ export type Label = {
   name: string;
   badge: string;
   status: string;
+  text: string;
 };
 
 export const defaultLabels: Label[] = [
-  { id: "A", name: "A 計畫", badge: "badge-primary", status: "status-primary" },
-  { id: "B", name: "B 計畫", badge: "badge-secondary", status: "status-secondary" },
-  { id: "C", name: "C 計畫", badge: "badge-accent", status: "status-accent" },
-  { id: "D", name: "D 計畫", badge: "badge-info", status: "status-info" },
-  { id: "E", name: "E 計畫", badge: "badge-success", status: "status-success" },
+  { id: "A", name: "A 計畫", badge: "badge-primary", status: "status-primary", text: "text-primary" },
+  { id: "B", name: "B 計畫", badge: "badge-secondary", status: "status-secondary", text: "text-secondary" },
+  { id: "C", name: "C 計畫", badge: "badge-accent", status: "status-accent", text: "text-accent" },
+  { id: "D", name: "D 計畫", badge: "badge-info", status: "status-info", text: "text-info" },
+  { id: "E", name: "E 計畫", badge: "badge-success", status: "status-success", text: "text-success" },
 ];
