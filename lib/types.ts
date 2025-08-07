@@ -52,3 +52,18 @@ export const defaultTasks: Task[] = [
     updatedAt: "2025-08-07T00:21:37.300Z",
   },
 ];
+
+export type Label = {
+  id: string;
+  name: string;
+  badge: string;
+  status: string;
+};
+
+export const defaultLabels: Label[] = [
+  { id: "A", name: "A 計畫", badge: "badge-primary", status: "status-primary" },
+  { id: "B", name: "B 計畫", badge: "badge-secondary", status: "status-secondary" },
+  { id: "C", name: "C 計畫", badge: "badge-accent", status: "status-accent" },
+  { id: "D", name: "D 計畫", badge: "badge-info", status: "status-info" },
+  { id: "E", name: "E 計畫", badge: "badge-success", status: "status-success" },
+];

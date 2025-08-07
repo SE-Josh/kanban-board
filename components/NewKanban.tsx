@@ -24,7 +24,7 @@ import { FaEdit } from "react-icons/fa";
 import { MdCancel } from "react-icons/md";
 import { FaBoxArchive } from "react-icons/fa6";
 
-import { Task, Status, defaultTasks, defaultStatuses } from "@/lib/types";
+import { Task, Status, defaultTasks, defaultStatuses, Label, defaultLabels } from "@/lib/types";
 import TaskList from "@/components/TaskList";
 
 // ===== Sortable 單一任務卡片 =====
@@ -215,6 +215,7 @@ const ItemOverlay = ({ children }: { children: React.ReactNode }) => {
 export default function KanbanBoard() {
   const [statuses, setStatuses] = useState<Status[]>(defaultStatuses);
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
+  const [labels, setLabels] = useState<Label[]>(defaultLabels);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   // 感應器設定
@@ -310,10 +311,60 @@ export default function KanbanBoard() {
 
   const getTasksByStatus = (statusId: string) => tasks.filter((t) => t.statusId === statusId);
 
+  const [editLabelIndex, setEditLabelIndex] = useState<number | null>(null);
+  const [editLabelValue, setEditLabelValue] = useState("");
+
+  const handleSaveLabelName = (index: number) => {
+    setLabels((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], name: editLabelValue.trim() || updated[index].id };
+      return updated;
+    });
+    setEditLabelIndex(null);
+    setEditLabelValue("");
+  };
   return (
     <div className="mx-auto w-full">
       <div className="mb-3">
         <a className="btn btn-ghost text-xl text-primary rounded">康邦 • 博德！</a>
+      </div>
+      <div className="my-3">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+          {labels.map((label, index) => (
+            <li key={label.id} className="flex items-center gap-2 bg-base-100 rounded p-3">
+              <span className={`badge ${label.badge} w-5 justify-center`} />
+
+              {editLabelIndex === index ? (
+                <>
+                  <input
+                    className="input input-sm input-bordered w-full max-w-xs"
+                    value={editLabelValue}
+                    onChange={(e) => setEditLabelValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveLabelName(index)}
+                    autoFocus
+                  />
+                  <button className="btn btn-sm btn-circle btn-ghost" title="儲存" onClick={() => handleSaveLabelName(index)}>
+                    <FaCheck className="text-success" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 truncate">{label.name}</span>
+                  <button
+                    className="btn btn-sm btn-circle btn-ghost"
+                    title="編輯"
+                    onClick={() => {
+                      setEditLabelIndex(index);
+                      setEditLabelValue(label.name);
+                    }}
+                  >
+                    <FaEdit className="text-warning" />
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="grid gap-4 md:grid-cols-3">
