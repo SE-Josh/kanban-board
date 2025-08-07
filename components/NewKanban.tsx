@@ -301,8 +301,19 @@ export default function KanbanBoard() {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
-  const handleEditTask = (taskId: string, newContent: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, content: newContent, updatedAt: new Date().toISOString() } : t)));
+  const handleEditTask = (taskId: string, newContent: string, newLabelId?: string) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              content: newContent ?? t.content,
+              labelId: newLabelId ?? t.labelId,
+              updatedAt: new Date().toISOString(),
+            }
+          : t
+      )
+    );
   };
 
   const handleArchiveTask = (taskId: string) => {
@@ -394,7 +405,7 @@ export default function KanbanBoard() {
         </DragOverlay>
       </DndContext>
 
-      <TaskList tasks={tasks} />
+      <TaskList tasks={tasks} labels={labels} onEditTask={handleEditTask} />
     </div>
   );
 }
