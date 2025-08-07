@@ -9,7 +9,7 @@ const TaskList = ({ tasks }: { tasks: Task[] }) => {
           <tr>
             {/* <th>編號</th> */}
             <th>內容</th>
-            <th>描述</th>
+            <th>標籤</th>
             <th>狀態</th>
             <th>建立時間</th>
           </tr>
@@ -19,7 +19,7 @@ const TaskList = ({ tasks }: { tasks: Task[] }) => {
             <tr key={task.id}>
               {/* <th>{task.id}</th> */}
               <td>{task.content}</td>
-              <td>{task.description || "No description"}</td>
+              <td>{task.description || "沒有標籤"}</td>
               <td>{defaultStatuses.find((status) => status.id === task.statusId)?.title}</td>
               <td>{new Date(task.createdAt).toLocaleString()}</td>
             </tr>
