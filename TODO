@@ -1,7 +1,8 @@
-8/6 做到這邊，修成正果 > 封存
+V 修成正果 > 封存
 給定五個標籤
 標籤可以改名稱
 List 的地方可以加上TAG
+SortableItem 前面的 threeDots 改成 status 浮標
 右上角功能列：打開蛋雕區
 localStorage 連動
 匯出、匯入
