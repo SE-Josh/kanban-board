@@ -7,11 +7,11 @@ import Kanban from "@/components/Kanban";
 import NewKanban from "@/components/NewKanban";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"newKanban" | "basic" | "sortable" | "multiple">("newKanban");
+  // const [activeTab, setActiveTab] = useState<"newKanban" | "basic" | "sortable" | "multiple">("newKanban");
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <div className="flex border-b dark:border-gray-700">
           <button
             className={`px-4 py-2 ${
@@ -46,9 +46,13 @@ export default function Home() {
             Multiple Containers
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="rounded-lg p-6 bg-base-200">
+        <NewKanban />
+      </div>
+
+      {/* <div className="rounded-lg p-6 bg-base-200">
         {activeTab === "newKanban" && <NewKanban />}
 
         {activeTab === "basic" && (
@@ -74,7 +78,7 @@ export default function Home() {
             <Kanban />
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }
