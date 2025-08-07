@@ -19,7 +19,7 @@ const TaskList = ({ tasks }: { tasks: Task[] }) => {
             <tr key={task.id}>
               {/* <th>{task.id}</th> */}
               <td>{task.content}</td>
-              <td>{task.description || "沒有標籤"}</td>
+              <td>{task.description || ""}</td>
               <td>{defaultStatuses.find((status) => status.id === task.statusId)?.title}</td>
               <td>{new Date(task.createdAt).toLocaleString()}</td>
             </tr>
