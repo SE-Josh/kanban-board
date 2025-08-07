@@ -11,10 +11,6 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <div className="mb-3">
-        <a className="btn btn-ghost text-xl text-primary">康邦 • 博德！</a>
-      </div>
-
       <div className="mb-6">
         <div className="flex border-b dark:border-gray-700">
           <button

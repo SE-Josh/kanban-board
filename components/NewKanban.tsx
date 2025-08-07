@@ -16,13 +16,7 @@ import {
   DragOverlay,
 } from "@dnd-kit/core";
 
-import {
-  SortableContext,
-  useSortable,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
+import { SortableContext, useSortable, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
 import { FaCheck } from "react-icons/fa";
@@ -33,25 +27,8 @@ import { Task, Status, defaultTasks, defaultStatuses } from "@/lib/types";
 import TaskList from "@/components/TaskList";
 
 // ===== Sortable 單一任務卡片 =====
-const SortableItem = ({
-  id,
-  content,
-  onDelete,
-  onEdit,
-}: {
-  id: UniqueIdentifier;
-  content: string;
-  onDelete: (taskId: string) => void;
-  onEdit: (taskId: string, newContent: string) => void;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+const SortableItem = ({ id, content, onDelete, onEdit }: { id: UniqueIdentifier; content: string; onDelete: (taskId: string) => void; onEdit: (taskId: string, newContent: string) => void }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content);
@@ -69,11 +46,7 @@ const SortableItem = ({
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border ${
-        isDragging
-          ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30`
-          : `bg-base-200 border-base-300 hover:bg-base-100`
-      }`}
+      className={`rounded-md border ${isDragging ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30` : `bg-base-200 border-base-300 hover:bg-base-100`}`}
     >
       <div className="flex items-center justify-between text-base-content">
         {isEditing ? (
@@ -85,11 +58,7 @@ const SortableItem = ({
             autoFocus
           />
         ) : (
-          <div
-            {...attributes}
-            {...listeners}
-            className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none"
-          >
+          <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none">
             <span>⋮</span>
             <span>{content}</span>
           </div>
@@ -164,25 +133,13 @@ const DroppableContainer = ({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      className="flex h-full min-h-40 flex-col rounded-md border p-3 bg-base-100 border-base-300 text-base-content"
-    >
+    <div ref={setNodeRef} className="flex h-full min-h-40 flex-col rounded-md border p-3 bg-base-100 border-base-300 text-base-content">
       <h3 className="mb-2 font-medium">{title}</h3>
       <div className="flex-1">
-        <SortableContext
-          items={tasks.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-2">
             {tasks.map((task) => (
-              <SortableItem
-                key={task.id}
-                id={task.id}
-                content={task.content}
-                onDelete={onDeleteTask}
-                onEdit={onEditTask}
-              />
+              <SortableItem key={task.id} id={task.id} content={task.content} onDelete={onDeleteTask} onEdit={onEditTask} />
             ))}
           </ul>
         </SortableContext>
@@ -260,11 +217,7 @@ export default function KanbanBoard() {
 
     if (activeStatusId === overStatusId) return;
 
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === activeTaskId ? { ...task, statusId: overStatusId } : task
-      )
-    );
+    setTasks((prev) => prev.map((task) => (task.id === activeTaskId ? { ...task, statusId: overStatusId } : task)));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -315,39 +268,17 @@ export default function KanbanBoard() {
   };
 
   const handleEditTask = (taskId: string, newContent: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, content: newContent, updatedAt: new Date().toISOString() }
-          : t
-      )
-    );
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, content: newContent, updatedAt: new Date().toISOString() } : t)));
   };
 
-  const getTasksByStatus = (statusId: string) =>
-    tasks.filter((t) => t.statusId === statusId);
+  const getTasksByStatus = (statusId: string) => tasks.filter((t) => t.statusId === statusId);
 
   return (
     <div className="mx-auto w-full">
-      <h2 className="mb-4 text-xl font-bold text-base-content">Kanban Board</h2>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragCancel={handleDragCancel}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        {/* 8/6 做到這邊，修成正果 > 封存 */}
-        {/* 給定五個標籤 */}
-        {/* 標籤可以改名稱 */}
-        {/* List 的地方可以加上TAG */}
-        {/* 右上角功能列：打開蛋雕區 */}
-        {/* localStorage 連動 */}
-        {/* 匯出、匯入 */}
-        {/* 產生日報 */}
-        {/* 搜尋功能 */}
-
+      <div className="mb-3">
+        <a className="btn btn-ghost text-xl text-primary rounded">康邦 • 博德！</a>
+      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="grid gap-4 md:grid-cols-3">
           {statuses.map((status) => {
             if (status.id === "archived") return null; // 忽略封存狀態
@@ -370,9 +301,7 @@ export default function KanbanBoard() {
             easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
           }}
         >
-          {activeId ? (
-            <ItemOverlay>{getActiveTask()?.content}</ItemOverlay>
-          ) : null}
+          {activeId ? <ItemOverlay>{getActiveTask()?.content}</ItemOverlay> : null}
         </DragOverlay>
       </DndContext>
 
