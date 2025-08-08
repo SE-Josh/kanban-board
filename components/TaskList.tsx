@@ -15,7 +15,7 @@ const TaskList = ({ tasks, labels, onEditTask }: TaskListProps) => {
         <thead>
           <tr>
             <th>內容</th>
-            <th>標籤</th>
+            <th>計畫</th>
             <th>狀態</th>
             <th>建立時間</th>
           </tr>
