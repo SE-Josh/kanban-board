@@ -16,7 +16,13 @@ import {
   DragOverlay,
 } from "@dnd-kit/core";
 
-import { SortableContext, useSortable, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
 import { FaCheck } from "react-icons/fa";
@@ -24,14 +30,28 @@ import { FaEdit } from "react-icons/fa";
 import { MdCancel } from "react-icons/md";
 import { FaBoxArchive } from "react-icons/fa6";
 
-import { Task, Status, defaultTasks, defaultStatuses, Label, defaultLabels } from "@/lib/types";
+import {
+  Task,
+  Status,
+  defaultTasks,
+  defaultStatuses,
+  Label,
+  defaultLabels,
+} from "@/lib/types";
 import TaskList from "@/components/TaskList";
+
+// ===== 任務卡片的 LabelStatus  =====
+const LabelPill = ({ labelId }: { labelId?: Label["id"] }) => {
+  const label = defaultLabels.find((l) => l.id === labelId);
+  return <div aria-label="status" className={`status ${label?.status}`} />;
+};
 
 // ===== Sortable 單一任務卡片 =====
 const SortableItem = ({
   id,
   content,
   statusId,
+  labelId,
   onDelete,
   onEdit,
   onArchive,
@@ -39,11 +59,19 @@ const SortableItem = ({
   id: UniqueIdentifier;
   content: string;
   statusId: string;
+  labelId?: Label["id"];
   onDelete: (taskId: string) => void;
   onEdit: (taskId: string, newContent: string) => void;
   onArchive: (taskId: string) => void;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content);
@@ -61,7 +89,11 @@ const SortableItem = ({
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border ${isDragging ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30` : `bg-base-200 border-base-300 hover:bg-base-100`}`}
+      className={`rounded-md border ${
+        isDragging
+          ? `border-2 border-dashed border-base-300 bg-base-200 text-neutral-content opacity-30`
+          : `bg-base-200 border-base-300 hover:bg-base-100`
+      }`}
     >
       <div className="flex items-center justify-between text-base-content">
         {/* 文字區 */}
@@ -74,8 +106,12 @@ const SortableItem = ({
             autoFocus
           />
         ) : (
-          <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none text-xs">
-            <span>⋮</span>
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center gap-2 flex-1 p-3 pe-0 select-none cursor-grab touch-none text-xs"
+          >
+            <LabelPill labelId={labelId} />
             <span>{content}</span>
           </div>
         )}
@@ -143,6 +179,7 @@ const DroppableContainer = ({
   id,
   title,
   tasks,
+  labels,
   onAddTask,
   onDeleteTask,
   onEditTask,
@@ -151,6 +188,7 @@ const DroppableContainer = ({
   id: string;
   title: string;
   tasks: Task[];
+  labels: Label[];
   onAddTask: (statusId: string, content: string) => void;
   onDeleteTask: (taskId: string) => void;
   onEditTask: (taskId: string, newContent: string) => void;
@@ -166,13 +204,28 @@ const DroppableContainer = ({
   };
 
   return (
-    <div ref={setNodeRef} className="flex h-full min-h-40 flex-col rounded-md border p-3 bg-base-100 border-base-300 text-base-content">
+    <div
+      ref={setNodeRef}
+      className="flex h-full min-h-40 flex-col rounded-md border p-3 bg-base-100 border-base-300 text-base-content"
+    >
       <h3 className="mb-2 font-medium">{title}</h3>
       <div className="flex-1">
-        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <ul className="flex flex-col gap-2">
             {tasks.map((task) => (
-              <SortableItem key={task.id} id={task.id} content={task.content} statusId={task.statusId} onDelete={onDeleteTask} onEdit={onEditTask} onArchive={onArchiveTask} />
+              <SortableItem
+                key={task.id}
+                id={task.id}
+                content={task.content}
+                statusId={task.statusId}
+                labelId={task.labelId}
+                onDelete={onDeleteTask}
+                onEdit={onEditTask}
+                onArchive={onArchiveTask}
+              />
             ))}
           </ul>
         </SortableContext>
@@ -251,7 +304,11 @@ export default function KanbanBoard() {
 
     if (activeStatusId === overStatusId) return;
 
-    setTasks((prev) => prev.map((task) => (task.id === activeTaskId ? { ...task, statusId: overStatusId } : task)));
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === activeTaskId ? { ...task, statusId: overStatusId } : task
+      )
+    );
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -301,14 +358,19 @@ export default function KanbanBoard() {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
-  const handleEditTask = (taskId: string, newContent: string, newLabelId?: string) => {
+  const handleEditTask = (
+    taskId: string,
+    newContent: string,
+    newLabelId?: string | null
+  ) => {
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
           ? {
               ...t,
               content: newContent ?? t.content,
-              labelId: newLabelId ?? t.labelId,
+              labelId:
+                newLabelId === null ? undefined : newLabelId ?? t.labelId,
               updatedAt: new Date().toISOString(),
             }
           : t
@@ -317,10 +379,17 @@ export default function KanbanBoard() {
   };
 
   const handleArchiveTask = (taskId: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, statusId: "archived", updatedAt: new Date().toISOString() } : t)));
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, statusId: "archived", updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
   };
 
-  const getTasksByStatus = (statusId: string) => tasks.filter((t) => t.statusId === statusId);
+  const getTasksByStatus = (statusId: string) =>
+    tasks.filter((t) => t.statusId === statusId);
 
   const [editLabelIndex, setEditLabelIndex] = useState<number | null>(null);
   const [editLabelValue, setEditLabelValue] = useState("");
@@ -328,7 +397,10 @@ export default function KanbanBoard() {
   const handleSaveLabelName = (index: number) => {
     setLabels((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], name: editLabelValue.trim() || updated[index].id };
+      updated[index] = {
+        ...updated[index],
+        name: editLabelValue.trim() || updated[index].id,
+      };
       return updated;
     });
     setEditLabelIndex(null);
@@ -337,13 +409,20 @@ export default function KanbanBoard() {
   return (
     <div className="mx-auto w-full">
       <div className="mb-3">
-        <a className="btn btn-ghost text-xl text-primary rounded">康邦 • 博德！</a>
+        <a className="btn btn-ghost text-xl text-primary rounded">
+          康邦 • 博德！
+        </a>
       </div>
       <div className="my-3">
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
           {labels.map((label, index) => (
-            <li key={label.id} className="flex items-center gap-2 bg-base-100 rounded p-3">
-              <span className={`badge ${label.badge} w-5 justify-center`} />
+            <li
+              key={label.id}
+              className="flex items-center gap-2 bg-base-100 rounded p-3"
+            >
+              <span
+                className={`badge badge-xs ${label.badge} w-4 justify-center`}
+              />
 
               {editLabelIndex === index ? (
                 <>
@@ -351,10 +430,16 @@ export default function KanbanBoard() {
                     className="input input-sm input-bordered w-full max-w-xs"
                     value={editLabelValue}
                     onChange={(e) => setEditLabelValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveLabelName(index)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleSaveLabelName(index)
+                    }
                     autoFocus
                   />
-                  <button className="btn btn-sm btn-circle btn-ghost" title="儲存" onClick={() => handleSaveLabelName(index)}>
+                  <button
+                    className="btn btn-sm btn-circle btn-ghost"
+                    title="儲存"
+                    onClick={() => handleSaveLabelName(index)}
+                  >
                     <FaCheck className="text-success" />
                   </button>
                 </>
@@ -377,7 +462,14 @@ export default function KanbanBoard() {
           ))}
         </ul>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragCancel={handleDragCancel}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
         <div className="grid gap-4 md:grid-cols-3">
           {statuses.map((status) => {
             if (status.id === "archived") return null; // 忽略封存狀態
@@ -387,6 +479,7 @@ export default function KanbanBoard() {
                 id={status.id}
                 title={status.title}
                 tasks={getTasksByStatus(status.id)}
+                labels={labels}
                 onAddTask={handleAddTask} // 傳入新增功能
                 onDeleteTask={handleDeleteTask} // 傳入刪除功能
                 onEditTask={handleEditTask} // 傳入編輯功能
@@ -401,7 +494,9 @@ export default function KanbanBoard() {
             easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
           }}
         >
-          {activeId ? <ItemOverlay>{getActiveTask()?.content}</ItemOverlay> : null}
+          {activeId ? (
+            <ItemOverlay>{getActiveTask()?.content}</ItemOverlay>
+          ) : null}
         </DragOverlay>
       </DndContext>
 

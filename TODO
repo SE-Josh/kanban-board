@@ -2,7 +2,8 @@ V 修成正果 > 封存
 V 給定五個標籤
 V 標籤可以改名稱
 V List 的地方可以加上TAG
-SortableItem 前面的 threeDots 改成 status 浮標
+V SortableItem 前面的 threeDots 改成 status 浮標
+V 修復下拉式選單沒辦法調回未分類
 右上角功能列：打開蛋雕區
 localStorage 連動
 匯出、匯入

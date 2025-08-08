@@ -5,7 +5,11 @@ import { Task, Label, defaultStatuses } from "@/lib/types";
 type TaskListProps = {
   tasks: Task[];
   labels: Label[];
-  onEditTask: (taskId: string, newContent: string, newLabelId?: string) => void;
+  onEditTask: (
+    taskId: string,
+    newContent: string,
+    newLabelId: string | null
+  ) => void;
 };
 
 const TaskList = ({ tasks, labels, onEditTask }: TaskListProps) => {
@@ -27,16 +31,33 @@ const TaskList = ({ tasks, labels, onEditTask }: TaskListProps) => {
               <tr key={task.id}>
                 <td>{task.content}</td>
                 <td>
-                  <select className="select select-bordered select-sm w-full max-w-xs" value={task.labelId || ""} onChange={(e) => onEditTask(task.id, task.content, e.target.value || undefined)}>
+                  <select
+                    className="select select-bordered select-sm w-full max-w-xs"
+                    value={task.labelId ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      onEditTask(task.id, task.content, v === "" ? null : v);
+                    }}
+                  >
                     <option value="">未分類</option>
                     {labels.map((label) => (
-                      <option key={label.id} value={label.id} className={`${label.text}`}>
+                      <option
+                        key={label.id}
+                        value={label.id}
+                        className={`${label.text}`}
+                      >
                         {label.name}
                       </option>
                     ))}
                   </select>
                 </td>
-                <td>{defaultStatuses.find((status) => status.id === task.statusId)?.title}</td>
+                <td>
+                  {
+                    defaultStatuses.find(
+                      (status) => status.id === task.statusId
+                    )?.title
+                  }
+                </td>
                 <td>{new Date(task.createdAt).toLocaleString()}</td>
               </tr>
             );
