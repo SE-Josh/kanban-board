@@ -611,7 +611,7 @@ export default function KanbanBoard() {
                               還原
                             </button>
                             <button
-                              className="btn btn-xs btn-outline btn-error rounded"
+                              className="btn btn-xs btn-soft btn-error rounded"
                               onClick={() => handleDeleteArchivedTask(task.id)}
                             >
                               刪除
