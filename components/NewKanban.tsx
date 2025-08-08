@@ -406,6 +406,31 @@ export default function KanbanBoard() {
     setEditLabelIndex(null);
     setEditLabelValue("");
   };
+
+  // 取得封存清單
+  const archivedTasks = tasks.filter((t) => t.statusId === "archived");
+
+  // 還原單筆（預設還原到 todo，可改成 done 等）
+  const handleUnarchiveTask = (taskId: string, toStatusId: string = "todo") => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, statusId: toStatusId, updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
+  };
+
+  // 刪除封存中的單筆
+  const handleDeleteArchivedTask = (taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  // 清空封存
+  const handleClearArchive = () => {
+    setTasks((prev) => prev.filter((t) => t.statusId !== "archived"));
+  };
+
   return (
     <div className="mx-auto w-full">
       <div className="mb-3">
@@ -427,7 +452,7 @@ export default function KanbanBoard() {
               {editLabelIndex === index ? (
                 <>
                   <input
-                    className="input input-sm input-bordered w-full max-w-xs"
+                    className="input input-xs input-bordered pe-0 border-0 "
                     value={editLabelValue}
                     onChange={(e) => setEditLabelValue(e.target.value)}
                     onKeyDown={(e) =>
@@ -445,7 +470,7 @@ export default function KanbanBoard() {
                 </>
               ) : (
                 <>
-                  <span className="flex-1 truncate">{label.name}</span>
+                  <span className="flex-1 truncate text-xs">{label.name}</span>
                   <button
                     className="btn btn-sm btn-circle btn-ghost"
                     title="編輯"
@@ -501,6 +526,123 @@ export default function KanbanBoard() {
       </DndContext>
 
       <TaskList tasks={tasks} labels={labels} onEditTask={handleEditTask} />
+
+      <div className="flex justify-end mt-3">
+        <div className="flex justify-end mt-3">
+          <button
+            className="btn btn-soft btn-info rounded gap-2"
+            onClick={() => {
+              const modal = document.getElementById(
+                "archiveModal"
+              ) as HTMLDialogElement | null;
+              if (modal) modal.showModal();
+            }}
+          >
+            封存區
+            <FaBoxArchive />
+            <span className="badge">{archivedTasks.length}</span>
+          </button>
+        </div>
+
+        <dialog id="archiveModal" className="modal">
+          <div className="modal-box max-w-3xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg">
+                封存區（{archivedTasks.length}）
+              </h3>
+              <form method="dialog">
+                <button className="btn btn-ghost btn-sm">✕</button>
+              </form>
+            </div>
+
+            {archivedTasks.length === 0 ? (
+              <div className="mt-4 alert">目前沒有封存的任務。</div>
+            ) : (
+              <div className="mt-4 overflow-x-auto rounded bg-base-100">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>計畫</th>
+                      <th>內容</th>
+                      <th>建立時間</th>
+                      <th>還原到</th>
+                      <th className="text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {archivedTasks.map((task) => (
+                      <tr key={task.id}>
+                        <td className="w-24">
+                          <LabelPill labelId={task.labelId} />
+                        </td>
+                        <td className="max-w-[320px]">
+                          <div className="truncate">{task.content}</div>
+                        </td>
+                        <td className="whitespace-nowrap">
+                          {new Date(task.createdAt).toLocaleString()}
+                        </td>
+                        <td className="w-40">
+                          <select
+                            className="select select-bordered select-xs w-full"
+                            defaultValue="todo"
+                            id={`restore-select-${task.id}`}
+                          >
+                            {statuses
+                              .filter((s) => s.id !== "archived")
+                              .map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.title}
+                                </option>
+                              ))}
+                          </select>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              className="btn btn-xs btn-soft btn-success rounded"
+                              onClick={() => {
+                                const sel = document.getElementById(
+                                  `restore-select-${task.id}`
+                                ) as HTMLSelectElement | null;
+                                const to = sel?.value || "todo";
+                                handleUnarchiveTask(task.id, to);
+                              }}
+                            >
+                              還原
+                            </button>
+                            <button
+                              className="btn btn-xs btn-outline btn-error rounded"
+                              onClick={() => handleDeleteArchivedTask(task.id)}
+                            >
+                              刪除
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="mt-4 flex justify-between items-center">
+                  <div className="text-xs opacity-70">
+                    提示：還原預設回「腦力激盪」，可在下拉選單選擇其他狀態。
+                  </div>
+                  <button
+                    className="btn btn-sm btn-error btn-outline rounded"
+                    onClick={handleClearArchive}
+                  >
+                    清空封存
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <form method="dialog" className="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+      </div>
     </div>
   );
 }

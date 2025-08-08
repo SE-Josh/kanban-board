@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </div> */}
 
-      <div className="rounded-lg p-6 bg-base-200">
+      <div className="rounded-lg p-6 pb-3 bg-base-200">
         <NewKanban />
       </div>
 

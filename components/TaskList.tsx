@@ -26,7 +26,7 @@ const TaskList = ({ tasks, labels, onEditTask }: TaskListProps) => {
         </thead>
         <tbody>
           {tasks.map((task) => {
-            const currentLabel = labels.find((l) => l.id === task.labelId);
+            if (task.statusId === "archived") return null;
             return (
               <tr key={task.id}>
                 <td>{task.content}</td>
