@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -39,6 +39,23 @@ import {
   defaultLabels,
 } from "@/lib/types";
 import TaskList from "@/components/TaskList";
+
+// —— LocalStorage Keys & Helpers ——
+const LS_TASKS_KEY = "kanban.tasks.v1";
+const LS_LABELS_KEY = "kanban.labels.v1";
+
+type TasksPayload = { version: 1; updatedAt: string; items: Task[] };
+type LabelsPayload = { version: 1; updatedAt: string; items: Label[] };
+
+function safeParse<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (e) {
+    console.warn("Parse localStorage failed:", e);
+    return null;
+  }
+}
 
 // ===== 任務卡片的 LabelStatus  =====
 const LabelPill = ({ labelId }: { labelId?: Label["id"] }) => {
@@ -270,6 +287,45 @@ export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [labels, setLabels] = useState<Label[]>(defaultLabels);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const hydratedRef = useRef(false); // ✅ 防止重複 hydrate
+
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (typeof window === "undefined") return;
+
+    // Tasks
+    const t = safeParse<TasksPayload>(localStorage.getItem(LS_TASKS_KEY));
+    if (t?.version === 1 && Array.isArray(t.items)) {
+      setTasks(t.items);
+    } else {
+      // 無資料或壞資料 -> 用預設
+      setTasks(defaultTasks);
+    }
+
+    // Labels
+    const l = safeParse<LabelsPayload>(localStorage.getItem(LS_LABELS_KEY));
+    if (l?.version === 1 && Array.isArray(l.items)) {
+      setLabels(l.items);
+    } else {
+      setLabels(defaultLabels);
+    }
+  }, []);
+
+  useEffect(() => {
+    persistTasks(tasks);
+  }, [tasks]);
+
+  useEffect(() => {
+    persistLabels(labels);
+  }, [labels]);
+
+  const resetLocalData = () => {
+    localStorage.removeItem(LS_TASKS_KEY);
+    localStorage.removeItem(LS_LABELS_KEY);
+    setTasks(defaultTasks);
+    setLabels(defaultLabels);
+  };
 
   // 感應器設定
   const sensors = useSensors(
@@ -407,6 +463,28 @@ export default function KanbanBoard() {
     setEditLabelValue("");
   };
 
+  const copyDailyReport = (includeArchived = false) => {
+    const getLabelName = (labelId?: string) =>
+      labels.find((l) => l.id === labelId)?.name ?? "未分類";
+
+    const source = includeArchived
+      ? tasks
+      : tasks.filter((t) => t.statusId !== "archived");
+
+    const text = source
+      .map((t) => `${getLabelName(t.labelId)}－${t.content}`)
+      .join("\n");
+
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        console.log("✅ 日報已複製到剪貼簿");
+      })
+      .catch((err) => {
+        console.error("❌ 複製失敗", err);
+      });
+  };
+
   // 取得封存清單
   const archivedTasks = tasks.filter((t) => t.statusId === "archived");
 
@@ -431,6 +509,48 @@ export default function KanbanBoard() {
     setTasks((prev) => prev.filter((t) => t.statusId !== "archived"));
   };
 
+  function debounce<T extends (...args: any[]) => void>(
+    func: T,
+    delay: number
+  ) {
+    let timer: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  }
+
+  // 建議 300–500ms，拖曳/輸入都會順
+  const persistTasks = debounce((items: Task[]) => {
+    try {
+      if (typeof window === "undefined") return;
+      const payload: TasksPayload = {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        items,
+      };
+      localStorage.setItem(LS_TASKS_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.error("Save tasks failed:", e);
+    }
+  }, 400);
+
+  const persistLabels = debounce((items: Label[]) => {
+    try {
+      if (typeof window === "undefined") return;
+      const payload: LabelsPayload = {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        items,
+      };
+      localStorage.setItem(LS_LABELS_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.error("Save labels failed:", e);
+    }
+  }, 400);
+
   return (
     <div className="mx-auto w-full">
       <div className="mb-3">
@@ -438,6 +558,7 @@ export default function KanbanBoard() {
           康邦 • 博德！
         </a>
       </div>
+      {/* 計畫標籤區 */}
       <div className="my-3">
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
           {labels.map((label, index) => (
@@ -527,23 +648,34 @@ export default function KanbanBoard() {
 
       <TaskList tasks={tasks} labels={labels} onEditTask={handleEditTask} />
 
+      {/* 封存區按鈕以及 Modal */}
       <div className="flex justify-end mt-3">
-        <div className="flex justify-end mt-3">
-          <button
-            className="btn btn-soft btn-info rounded gap-2"
-            onClick={() => {
-              const modal = document.getElementById(
-                "archiveModal"
-              ) as HTMLDialogElement | null;
-              if (modal) modal.showModal();
-            }}
-          >
-            封存區
-            <FaBoxArchive />
-            <span className="badge">{archivedTasks.length}</span>
-          </button>
-        </div>
-
+        <button
+          className="btn btn-soft btn-error rounded gap-2"
+          onClick={() => {
+            copyDailyReport();
+          }}
+        >
+          產生日報
+        </button>
+        <button
+          className="btn btn-soft btn-error rounded gap-2"
+          onClick={resetLocalData}
+        >
+          重置 LocalStorage
+        </button>
+        <button
+          className="btn btn-soft btn-info rounded gap-2"
+          onClick={() => {
+            const modal = document.getElementById(
+              "archiveModal"
+            ) as HTMLDialogElement | null;
+            if (modal) modal.showModal();
+          }}
+        >
+          <FaBoxArchive />
+          <span className="badge">{archivedTasks.length}</span>
+        </button>
         <dialog id="archiveModal" className="modal">
           <div className="modal-box max-w-3xl">
             <div className="flex items-center justify-between">

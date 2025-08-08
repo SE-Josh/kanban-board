@@ -4,7 +4,6 @@ V 標籤可以改名稱
 V List 的地方可以加上TAG
 V SortableItem 前面的 threeDots 改成 status 浮標
 V 修復下拉式選單沒辦法調回未分類
-
 V 右上角功能列：打開蛋雕區（封存區）
 localStorage 連動
 匯出、匯入
