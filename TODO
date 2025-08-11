@@ -8,7 +8,10 @@ V 右上角功能列：打開蛋雕區（封存區）
 V localStorage 連動
 V 產生日報
 V 匯出、匯入
+V 操作增加 Toast 提醒 (Sonner 或是 DaisyUI 的)
+V 重置要確認後才進行
+V 列表排序先照 Status 才 List
+V 功能列 跟 計畫列 調換
+V ICON 更換，功能列樣式更新
 
 可以透過快捷 @A @B 新增分類
-重要操作要確認後才進行
-操作增加 Toast 提醒 (Sonner 或是 DaisyUI 的)
