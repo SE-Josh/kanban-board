@@ -10,7 +10,7 @@ export default function Home() {
   // const [activeTab, setActiveTab] = useState<"newKanban" | "basic" | "sortable" | "multiple">("newKanban");
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
+    <div className="mx-auto max-w-4xl p-4 min-h-screen flex justify-center items-center">
       {/* <div className="mb-6">
         <div className="flex border-b dark:border-gray-700">
           <button
@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </div> */}
 
-      <div className="rounded-lg p-6 pb-3 bg-base-200">
+      <div className="rounded-lg p-6 bg-base-200 min-w-216">
         <NewKanban />
       </div>
 
