@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ThemeController from "@/components/ThemeController";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "康邦 • 博德！",
@@ -31,7 +32,12 @@ export default function RootLayout({
           {/* three-dots 功能列：匯出、匯入、分享 */}
           <div className="flex-none">
             <button className="btn btn-square btn-ghost">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block h-5 w-5 stroke-current">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="inline-block h-5 w-5 stroke-current"
+              >
                 {" "}
                 <path
                   strokeLinecap="round"
@@ -44,6 +50,7 @@ export default function RootLayout({
           </div>
         </div>
         <ThemeController />
+        <Toaster />
         {children}
       </body>
     </html>
