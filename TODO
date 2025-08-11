@@ -5,9 +5,10 @@ V List 的地方可以加上TAG
 V SortableItem 前面的 threeDots 改成 status 浮標
 V 修復下拉式選單沒辦法調回未分類
 V 右上角功能列：打開蛋雕區（封存區）
-localStorage 連動
-匯出、匯入
-產生日報
-搜尋功能 
+V localStorage 連動
+V 產生日報
+V 匯出、匯入
 
 可以透過快捷 @A @B 新增分類
+重要操作要確認後才進行
+操作增加 Toast 提醒 (Sonner 或是 DaisyUI 的)
