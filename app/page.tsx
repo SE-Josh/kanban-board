@@ -1,16 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import BasicDragDrop from "@/components/BasicDragDrop";
-import SortableList from "@/components/SortableList";
-import Kanban from "@/components/Kanban";
-import NewKanban from "@/components/NewKanban";
+import Kanban from "@/components/NewKanban";
 
 export default function Home() {
   // const [activeTab, setActiveTab] = useState<"newKanban" | "basic" | "sortable" | "multiple">("newKanban");
 
   return (
-    <div className="mx-auto max-w-4xl p-4 min-h-screen flex justify-center items-center">
+    <div className="mx-auto max-w-4xl p-4 pt-14 min-h-screen flex justify-center items-start">
       {/* <div className="mb-6">
         <div className="flex border-b dark:border-gray-700">
           <button
@@ -49,7 +46,7 @@ export default function Home() {
       </div> */}
 
       <div className="rounded-lg p-6 bg-base-200 min-w-216">
-        <NewKanban />
+        <Kanban />
       </div>
 
       {/* <div className="rounded-lg p-6 bg-base-200">

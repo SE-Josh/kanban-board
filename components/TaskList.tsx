@@ -17,7 +17,7 @@ const TaskList = ({ tasks, labels, onEditTask }: TaskListProps) => {
   const taskOrder = ["brainstorm", "in-progress", "done", "archived"];
   return (
     <div className="overflow-x-auto mt-5 rounded bg-base-100">
-      <table className="table">
+      <table className="table table-sm">
         <thead>
           <tr>
             <th>內容</th>
