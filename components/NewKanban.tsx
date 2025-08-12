@@ -48,6 +48,7 @@ import TaskList from "@/components/TaskList";
 // —— LocalStorage Keys & Helpers ——
 const LS_TASKS_KEY = "kanban.tasks.v1";
 const LS_LABELS_KEY = "kanban.labels.v1";
+const TOKEN_RE = /[@＠]([A-Za-z0-9_-]+)/g;
 
 type TasksPayload = { version: 1; updatedAt: string; items: Task[] };
 type LabelsPayload = { version: 1; updatedAt: string; items: Label[] };
@@ -108,10 +109,17 @@ const SortableItem = ({
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   const handleSave = () => {
-    if (editValue.trim()) {
-      onEdit(id as string, editValue.trim());
-      setIsEditing(false);
-    }
+    if (!editValue.trim()) return;
+
+    onEdit(id as string, editValue.trim());
+
+    const cleanedForUI = editValue
+      .replace(TOKEN_RE, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    setEditValue(cleanedForUI);
+
+    setIsEditing(false);
   };
 
   return (
@@ -237,7 +245,9 @@ const DroppableContainer = ({
       ref={setNodeRef}
       className="flex h-full min-h-40 flex-col rounded-md border p-3 bg-base-100 border-base-300 text-base-content"
     >
-      <h3 className="mb-2 font-medium">{title}</h3>
+      <h3 className="mb-2 text-base-content font-semibold opacity-85">
+        {title}
+      </h3>
       <div className="flex-1">
         <SortableContext
           items={tasks.map((t) => t.id)}
@@ -267,11 +277,11 @@ const DroppableContainer = ({
       </div>
 
       {/* 新增任務輸入框 */}
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex gap-2 hover:bg-base-200 rounded-md">
         <input
           type="text"
           placeholder="新增任務..."
-          className="input input-ghost input-xs border-0 focus:outline-none"
+          className="input input-ghost input-xs border-0 rounded-md focus:outline-none"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -416,14 +426,42 @@ export default function KanbanBoard() {
 
   const getActiveTask = () => tasks.find((t) => t.id === activeId) || null;
 
+  const extractLabelFromContent = (
+    raw: string,
+    labels: Label[]
+  ): { cleaned: string; labelId?: Label["id"] } => {
+    TOKEN_RE.lastIndex = 0; // 歸零
+    // 支援 @ 與全形 ＠；token 僅允許英數/底線/連字號
+    let foundLabelId: string | undefined;
+
+    // 找第一個有在 labels 裡出現的 token 作為 labelId
+    let m: RegExpExecArray | null;
+    while ((m = TOKEN_RE.exec(raw)) !== null) {
+      const token = m[1]; // 例如 "A"
+      if (labels.some((l) => l.id === token)) {
+        foundLabelId = token as Label["id"];
+        break;
+      }
+    }
+
+    // 把所有 @token / ＠token 移除，再壓空白
+    const cleaned = raw.replace(TOKEN_RE, " ").replace(/\s+/g, " ").trim();
+
+    return { cleaned: cleaned || raw.trim(), labelId: foundLabelId };
+  };
+
   const handleAddTask = (statusId: string, content: string) => {
+    const { cleaned, labelId } = extractLabelFromContent(content, labels);
+
     const newTask: Task = {
       id: crypto.randomUUID(),
       statusId,
-      content,
+      content: cleaned,
+      labelId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
     setTasks((prev) => [...prev, newTask]);
   };
 
@@ -436,18 +474,29 @@ export default function KanbanBoard() {
     newContent: string,
     newLabelId?: string | null
   ) => {
+    // 先把內容中的 @token 移除並嘗試解析出 labelId
+    const { cleaned, labelId: parsed } = extractLabelFromContent(
+      newContent,
+      labels
+    );
+
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              content: newContent ?? t.content,
-              labelId:
-                newLabelId === null ? undefined : newLabelId ?? t.labelId,
-              updatedAt: new Date().toISOString(),
-            }
-          : t
-      )
+      prev.map((t) => {
+        if (t.id !== taskId) return t;
+
+        const nextLabelId =
+          newLabelId === null ? undefined : newLabelId ?? parsed ?? t.labelId;
+
+        // 可選：若內容與標籤都沒變，就直接回傳 t，避免不必要更新
+        if (t.content === cleaned && t.labelId === nextLabelId) return t;
+
+        return {
+          ...t,
+          content: cleaned,
+          labelId: nextLabelId,
+          updatedAt: new Date().toISOString(),
+        };
+      })
     );
   };
 
@@ -659,9 +708,7 @@ export default function KanbanBoard() {
     <div className="mx-auto w-full">
       <div className="mb-5 flex flex-column justify-between items-center">
         {/* Logo 區 */}
-        <a className="text-xl font-bold text-primary">
-          康邦 • 博德！
-        </a>
+        <a className="text-xl font-bold text-primary">康邦 • 博德！</a>
         {/* 功能列按鈕以及封存區 Modal */}
         <div className="flex justify-end gap-1">
           <button
