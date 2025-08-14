@@ -531,7 +531,7 @@ export default function KanbanBoard() {
 
   const copyDailyReport = (includeArchived = false) => {
     const getLabelName = (labelId?: string) =>
-      labels.find((l) => l.id === labelId)?.name ?? "未分類";
+      labels.find((l) => l.id === labelId)?.name ?? "其他";
 
     const source = includeArchived
       ? tasks
