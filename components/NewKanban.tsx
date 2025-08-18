@@ -533,9 +533,7 @@ export default function KanbanBoard() {
     const getLabelName = (labelId?: string) =>
       labels.find((l) => l.id === labelId)?.name ?? "其他";
 
-    const source = includeArchived
-      ? tasks
-      : tasks.filter((t) => t.statusId !== "archived");
+    const source = tasks.filter((t) => t.statusId === "in-progress");
 
     const text = source
       .map((t) => `${getLabelName(t.labelId)}－${t.content}`)
