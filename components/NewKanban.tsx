@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -311,6 +311,16 @@ export default function KanbanBoard() {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const hydratedRef = useRef(false); // ✅ 防止重複 hydrate
 
+  // —— for onDragOver 即時預覽：節流 + 去重 ——
+  const lastAppliedRef = useRef<{ id: string; status: string } | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
@@ -334,13 +344,63 @@ export default function KanbanBoard() {
     }
   }, []);
 
+  // —— 持久化：使用穩定的 debounced 實例 ——
+  function debounce<T extends (...args: any[]) => void>(
+    func: T,
+    delay: number
+  ) {
+    let timer: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  }
+
+  const persistTasks = useMemo(
+    () =>
+      debounce((items: Task[]) => {
+        try {
+          if (typeof window === "undefined") return;
+          const payload: TasksPayload = {
+            version: 1,
+            updatedAt: new Date().toISOString(),
+            items,
+          };
+          localStorage.setItem(LS_TASKS_KEY, JSON.stringify(payload));
+        } catch (e) {
+          console.error("Save tasks failed:", e);
+        }
+      }, 400),
+    []
+  );
+
+  const persistLabels = useMemo(
+    () =>
+      debounce((items: Label[]) => {
+        try {
+          if (typeof window === "undefined") return;
+          const payload: LabelsPayload = {
+            version: 1,
+            updatedAt: new Date().toISOString(),
+            items,
+          };
+          localStorage.setItem(LS_LABELS_KEY, JSON.stringify(payload));
+        } catch (e) {
+          console.error("Save labels failed:", e);
+        }
+      }, 400),
+    []
+  );
+
   useEffect(() => {
     persistTasks(tasks);
-  }, [tasks]);
+  }, [tasks, persistTasks]);
 
   useEffect(() => {
     persistLabels(labels);
-  }, [labels]);
+  }, [labels, persistLabels]);
 
   const resetLocalData = () => {
     if (confirm("確定要重置所有資料嗎？這個動作無法復原！")) {
@@ -369,59 +429,119 @@ export default function KanbanBoard() {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id);
+    lastAppliedRef.current = null; // 重置去重記錄
   };
 
   const handleDragCancel = () => {
     setActiveId(null);
+    lastAppliedRef.current = null; // 重置
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeTaskId = active.id as string;
-    const overId = over.id as string;
+    const activeTaskId = String(active.id);
+    const overId = String(over.id);
 
     const activeStatusId = findStatusIdByTaskId(activeTaskId) ?? activeTaskId;
     const overStatusId = findStatusIdByTaskId(overId) ?? overId;
 
+    // 同欄位就不必即時預覽
     if (activeStatusId === overStatusId) return;
 
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === activeTaskId ? { ...task, statusId: overStatusId } : task
-      )
-    );
+    // 與上次相同就不更新（避免重複 setState）
+    const last = lastAppliedRef.current;
+    if (last && last.id === activeTaskId && last.status === overStatusId)
+      return;
+
+    // 用 RAF 節流合併更新；每一幀最多改一次
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === activeTaskId
+            ? {
+                ...task,
+                statusId: overStatusId,
+                updatedAt: new Date().toISOString(),
+              }
+            : task
+        )
+      );
+      lastAppliedRef.current = { id: activeTaskId, status: overStatusId };
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
       setActiveId(null);
+      lastAppliedRef.current = null;
       return;
     }
 
-    const activeTaskId = active.id as string;
-    const overTaskId = over.id as string;
+    const activeTaskId = String(active.id);
+    const overId = String(over.id);
 
     const activeStatusId = findStatusIdByTaskId(activeTaskId) ?? activeTaskId;
-    const overStatusId = findStatusIdByTaskId(overTaskId) ?? overTaskId;
+    const overStatusId = findStatusIdByTaskId(overId) ?? overId;
 
     if (activeStatusId === overStatusId) {
-      // 同一欄位內排序
+      // —— 同欄排序 ——
       const currentTasks = tasks.filter((t) => t.statusId === activeStatusId);
-      const activeIndex = currentTasks.findIndex((t) => t.id === activeTaskId);
-      const overIndex = currentTasks.findIndex((t) => t.id === overTaskId);
+      const fromIndex = currentTasks.findIndex((t) => t.id === activeTaskId);
+      const toIndex = currentTasks.findIndex((t) => t.id === overId);
 
-      if (activeIndex !== -1 && overIndex !== -1) {
-        const newOrder = arrayMove(currentTasks, activeIndex, overIndex);
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        const newOrder = arrayMove(currentTasks, fromIndex, toIndex);
         setTasks((prev) => {
-          const otherTasks = prev.filter((t) => t.statusId !== activeStatusId);
-          return [...otherTasks, ...newOrder];
+          const others = prev.filter((t) => t.statusId !== activeStatusId);
+          return [...others, ...newOrder];
         });
       }
+    } else {
+      // —— 跨欄真正落位 ——
+      const toList = tasks.filter((t) => t.statusId === overStatusId);
+      const overIndex = toList.findIndex((t) => t.id === overId);
+      const dropIndex = overIndex >= 0 ? overIndex : toList.length;
+
+      setTasks((prev) => {
+        // 1) 確保把 active 卡片狀態改為目標欄
+        const changed = prev.map((t) =>
+          t.id === activeTaskId
+            ? {
+                ...t,
+                statusId: overStatusId,
+                updatedAt: new Date().toISOString(),
+              }
+            : t
+        );
+
+        // 2) 插入到目標欄位的 dropIndex
+        const moved = changed.find((t) => t.id === activeTaskId)!;
+        const toListNow = changed.filter(
+          (t) => t.statusId === overStatusId && t.id !== activeTaskId
+        );
+        const others = changed.filter((t) => t.statusId !== overStatusId);
+
+        const merged = [
+          ...others,
+          ...toListNow.slice(0, dropIndex),
+          moved,
+          ...toListNow.slice(dropIndex),
+        ];
+        return merged;
+      });
     }
+
+    // 清尾
     setActiveId(null);
+    lastAppliedRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
   };
 
   const getActiveTask = () => tasks.find((t) => t.id === activeId) || null;
@@ -572,48 +692,6 @@ export default function KanbanBoard() {
   const handleClearArchive = () => {
     setTasks((prev) => prev.filter((t) => t.statusId !== "archived"));
   };
-
-  function debounce<T extends (...args: any[]) => void>(
-    func: T,
-    delay: number
-  ) {
-    let timer: ReturnType<typeof setTimeout>;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        func(...args);
-      }, delay);
-    };
-  }
-
-  // 建議 300–500ms，拖曳/輸入都會順
-  const persistTasks = debounce((items: Task[]) => {
-    try {
-      if (typeof window === "undefined") return;
-      const payload: TasksPayload = {
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        items,
-      };
-      localStorage.setItem(LS_TASKS_KEY, JSON.stringify(payload));
-    } catch (e) {
-      console.error("Save tasks failed:", e);
-    }
-  }, 400);
-
-  const persistLabels = debounce((items: Label[]) => {
-    try {
-      if (typeof window === "undefined") return;
-      const payload: LabelsPayload = {
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        items,
-      };
-      localStorage.setItem(LS_LABELS_KEY, JSON.stringify(payload));
-    } catch (e) {
-      console.error("Save labels failed:", e);
-    }
-  }, 400);
 
   const importInputRef = useRef<HTMLInputElement>(null);
 
